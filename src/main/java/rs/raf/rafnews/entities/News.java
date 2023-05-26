@@ -1,5 +1,7 @@
 package rs.raf.rafnews.entities;
 
+import rs.raf.rafnews.annotations.Column;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -9,6 +11,7 @@ public class News {
     private String content;
     private String datetime;
     private int numberOfVisits;
+    @Column("author_id")
     private User author;
     private List<Comment> comments;
     private List<Tag> tags;

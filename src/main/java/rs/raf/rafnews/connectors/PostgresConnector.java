@@ -1,9 +1,8 @@
-package rs.raf.rafnews.respositories;
-
+package rs.raf.rafnews.connectors;
 import java.sql.*;
 import java.util.Optional;
 
-abstract public class PostgresAbstractRepository {
+public class PostgresConnector {
 
     private final String JDCB_URL = "jdbc:postgresql";
     private final String HOST = "localhost";
@@ -12,16 +11,16 @@ abstract public class PostgresAbstractRepository {
     private final String USERNAME = "postgres";
     private final String PASSWORD = "postgres";
 
-    public PostgresAbstractRepository() {
+    public PostgresConnector() {
         try {
             // Register the Postgres JDBC driver
             Class.forName("org.postgresql.Driver");
         } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
-    protected Connection newConnection() throws SQLException {
+    public Connection newConnection() throws SQLException {
         return DriverManager.getConnection(
             JDCB_URL + "://" + HOST + ":" + PORT + "/" + DATABASE,
                 USERNAME,
@@ -29,7 +28,15 @@ abstract public class PostgresAbstractRepository {
         );
     }
 
-    protected void closeStatement(Statement statement) {
+    public void closeConnection(Connection connection) {
+        try {
+            Optional.of(connection).get().close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void closeStatement(Statement statement) {
         try {
             Optional.of(statement).get().close();
         } catch (SQLException e) {
@@ -37,17 +44,9 @@ abstract public class PostgresAbstractRepository {
         }
     }
 
-    protected void closeResultSet(ResultSet resultSet) {
+    public void closeResultSet(ResultSet resultSet) {
         try {
             Optional.of(resultSet).get().close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    protected void closeConnection(Connection connection) {
-        try {
-            Optional.of(connection).get().close();
         } catch (SQLException e) {
             e.printStackTrace();
         }

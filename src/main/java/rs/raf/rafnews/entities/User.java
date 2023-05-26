@@ -1,16 +1,17 @@
 package rs.raf.rafnews.entities;
 
+import rs.raf.rafnews.annotations.Entity;
+import rs.raf.rafnews.annotations.ID;
 import rs.raf.rafnews.entities.utils.UserStatus;
 import rs.raf.rafnews.entities.utils.UserType;
 
-import java.util.Objects;
-
+@Entity("users")
 public class User {
 
+    @ID
     private Integer id;
     private String email;
     private String name;
-    private String username;
     private String surname;
     private UserType type;
     private UserStatus status;
@@ -23,7 +24,6 @@ public class User {
             Integer id,
             String email,
             String name,
-            String username,
             String surname,
             UserType type,
             UserStatus status,
@@ -33,7 +33,6 @@ public class User {
         this.id = id;
         this.email = email;
         this.name = name;
-        this.username = username;
         this.surname = surname;
         this.type = type;
         this.status = status;
@@ -62,14 +61,6 @@ public class User {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
     }
 
     public String getSurname() {
@@ -109,7 +100,6 @@ public class User {
         return "User{" +
                 "email='" + email + '\'' +
                 ", name='" + name + '\'' +
-                ", username='" + username + '\'' +
                 ", surname='" + surname + '\'' +
                 ", type=" + type +
                 ", status=" + status +
