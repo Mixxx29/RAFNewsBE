@@ -117,7 +117,6 @@ public class PostgresGenericRepository<T> implements GenericRepository<T> {
     public T save(T entity) {
         Connection connection = null;
         PreparedStatement preparedStatement = null;
-        ResultSet resultSet = null;
 
         try {
             connection = connector.newConnection();
@@ -136,7 +135,6 @@ public class PostgresGenericRepository<T> implements GenericRepository<T> {
         } finally {
             connector.closeConnection(connection);
             connector.closeStatement(preparedStatement);
-            connector.closeResultSet(resultSet);
         }
         return null;
     }
@@ -270,8 +268,8 @@ public class PostgresGenericRepository<T> implements GenericRepository<T> {
             if (!field.isAnnotationPresent(ID.class)) continue;
             try {
                 field.setAccessible(true);
-                return field.getInt(entity);
-            } catch (IllegalAccessException e) {
+                return (int) field.get(entity);
+            } catch (IllegalAccessException | IllegalArgumentException e) {
                 throw new SQLException("Failed to get ID: " + e);
             }
         }
