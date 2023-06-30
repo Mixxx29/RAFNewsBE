@@ -1,9 +1,9 @@
 package rs.raf.rafnews.respositories;
 
-import rs.raf.rafnews.annotations.Column;
-import rs.raf.rafnews.annotations.Entity;
-import rs.raf.rafnews.annotations.ID;
+import rs.raf.rafnews.annotations.*;
 import rs.raf.rafnews.connectors.PostgresConnector;
+import rs.raf.rafnews.respositories.util.Pageable;
+import rs.raf.rafnews.utils.EntityManager;
 
 import java.lang.reflect.Field;
 import java.sql.*;
@@ -12,9 +12,9 @@ import java.util.List;
 
 public class PostgresGenericRepository<T> implements GenericRepository<T> {
 
-    private PostgresConnector connector;
-    private final Class<T> entityClass;
-    private final String tableName;
+    protected final Class<T> entityClass;
+    protected final String tableName;
+    protected PostgresConnector connector;
 
     public PostgresGenericRepository(Class<T> entityClass) {
         this.entityClass = entityClass;
@@ -24,7 +24,7 @@ public class PostgresGenericRepository<T> implements GenericRepository<T> {
 
     @Override
     public List<T> getAll() {
-        String sql = "SELECT * FROM " + tableName;
+        String sql = "SELECT * FROM " + tableName + " ORDER BY id";
         List<T> entities = new ArrayList<>();
 
         Connection connection = null;
@@ -52,6 +52,69 @@ public class PostgresGenericRepository<T> implements GenericRepository<T> {
         }
 
         return entities;
+    }
+
+    @Override
+    public List<T> getAll(Pageable pageable) {
+        final int start = (pageable.getPageIndex() - 1) * pageable.getPageSize();
+        final int size = pageable.getPageSize();
+        String sql = "SELECT * FROM " + tableName + " ORDER BY id LIMIT " + size + " OFFSET " + start + ";";
+
+        List<T> entities = new ArrayList<>();
+
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet resultSet = null;
+
+        try {
+            connection = connector.newConnection();
+
+            statement = connection.createStatement();
+
+            resultSet = statement.executeQuery(sql);
+
+            while (resultSet.next()) {
+                entities.add(mapResultSetToEntity(resultSet));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            connector.closeConnection(connection);
+            connector.closeStatement(statement);
+            connector.closeResultSet(resultSet);
+        }
+
+        return entities;
+    }
+
+    @Override
+    public int pageCount(final int pageSize) {
+        String sql = "SELECT CEIL(COUNT(*)::FLOAT / " + pageSize + ") AS total_pages FROM " + tableName + ";";
+
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet resultSet = null;
+
+        try {
+            connection = connector.newConnection();
+
+            statement = connection.createStatement();
+
+            resultSet = statement.executeQuery(sql);
+
+            if (resultSet.next()) {
+                return resultSet.getInt(1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            connector.closeConnection(connection);
+            connector.closeStatement(statement);
+            connector.closeResultSet(resultSet);
+        }
+        return 0;
     }
 
     @Override
@@ -161,7 +224,7 @@ public class PostgresGenericRepository<T> implements GenericRepository<T> {
         }
     }
 
-    private T mapResultSetToEntity(ResultSet resultSet) throws SQLException {
+    protected T mapResultSetToEntity(ResultSet resultSet) throws SQLException {
         try {
             T entity = entityClass.getDeclaredConstructor().newInstance();
 
@@ -173,14 +236,28 @@ public class PostgresGenericRepository<T> implements GenericRepository<T> {
                         field.isAnnotationPresent(Column.class) ?
                                 field.getAnnotation(Column.class).value() : field.getName();
 
-                if (columnName.endsWith("_id")) {
+                Object value;
+                if (field.isAnnotationPresent(ManyToOne.class)) {
+                    GenericRepository<?> repository = EntityManager.getRepository(field.getType());
+                    value = repository.getById(getID(entity));
+                    System.out.println(value);
+                } else if (field.isAnnotationPresent(OneToMany.class)) {
                     continue;
+                } else if (field.isAnnotationPresent(ManyToMany.class)) {
+                    continue;
+                } else {
+                    value = resultSet.getObject(columnName);
+                    if (field.getType().isEnum()) {
+                        Enum<?>[] enumConstants = (Enum<?>[]) field.getType().getEnumConstants();
+                        for (Enum<?> enumValue : enumConstants) {
+                            if (enumValue.name().equals(value)) {
+                                value = enumValue;
+                                break;
+                            }
+                        }
+                    }
                 }
 
-                Object value = resultSet.getObject(columnName);
-                if (field.getType().isEnum()) {
-                    value = field.getType().getEnumConstants()[(int) value];
-                }
                 field.set(entity, value);
             }
 
@@ -190,7 +267,7 @@ public class PostgresGenericRepository<T> implements GenericRepository<T> {
         }
     }
 
-    private String generateInsertQuery() {
+    protected String generateInsertQuery() {
         StringBuilder sqlBuilder = new StringBuilder();
         StringBuilder valuesBuilder = new StringBuilder();
 
@@ -212,7 +289,7 @@ public class PostgresGenericRepository<T> implements GenericRepository<T> {
         return sqlBuilder.toString() + valuesBuilder.toString();
     }
 
-    private String generateUpdateQuery() {
+    protected String generateUpdateQuery() {
         StringBuilder sqlBuilder = new StringBuilder();
 
         sqlBuilder.append("UPDATE ").append(tableName).append(" SET ");
@@ -230,7 +307,7 @@ public class PostgresGenericRepository<T> implements GenericRepository<T> {
         return sqlBuilder.toString();
     }
 
-    private void setStatementParameters(PreparedStatement preparedStatement, T entity) throws SQLException {
+    protected void setStatementParameters(PreparedStatement preparedStatement, T entity) throws SQLException {
         Field[] fields = entityClass.getDeclaredFields();
         int parameterIndex = 1;
 
@@ -239,8 +316,10 @@ public class PostgresGenericRepository<T> implements GenericRepository<T> {
             field.setAccessible(true);
             try {
                 Object value = field.get(entity);
-                if (field.getType().isEnum()) {
-                    value = ((Enum<?>) value).ordinal();
+                if (field.isAnnotationPresent(ManyToOne.class)) {
+                    value = getID(value);
+                } else if (field.getType().isEnum()) {
+                    value = ((Enum<?>) value).name();
                 }
                 preparedStatement.setObject(parameterIndex++, value);
             } catch (IllegalAccessException e) {
@@ -249,8 +328,8 @@ public class PostgresGenericRepository<T> implements GenericRepository<T> {
         }
     }
 
-    private void setID(int id, T entity) throws SQLException {
-        Field[] fields = entityClass.getDeclaredFields();
+    protected void setID(int id, Object entity) throws SQLException {
+        Field[] fields = entity.getClass().getDeclaredFields();
         for (Field field : fields) {
             if (!field.isAnnotationPresent(ID.class)) continue;
             try {
@@ -262,8 +341,8 @@ public class PostgresGenericRepository<T> implements GenericRepository<T> {
         }
     }
 
-    private int getID(T entity) throws SQLException {
-        Field[] fields = entityClass.getDeclaredFields();
+    protected int getID(Object entity) throws SQLException {
+        Field[] fields = entity.getClass().getDeclaredFields();
         for (Field field : fields) {
             if (!field.isAnnotationPresent(ID.class)) continue;
             try {

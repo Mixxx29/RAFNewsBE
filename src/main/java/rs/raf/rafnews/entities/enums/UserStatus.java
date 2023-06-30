@@ -1,4 +1,4 @@
-package rs.raf.rafnews.entities.utils;
+package rs.raf.rafnews.entities.enums;
 
 public enum UserStatus {
     ACTIVE,
