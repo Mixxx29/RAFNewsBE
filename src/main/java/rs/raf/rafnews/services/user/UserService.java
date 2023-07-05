@@ -67,6 +67,7 @@ public class UserService {
         if (Security.verifyPassword(loginRequest.getPassword(), user.getPassword())) {
             Algorithm algorithm = Algorithm.HMAC256(SECRET_KEY);
             jwt = JWT.create()
+                    .withClaim("id", user.getId())
                     .withClaim("name", user.getName() + " " + user.getSurname())
                     .withClaim("type", user.getType().toString())
                     .sign(algorithm);
@@ -104,6 +105,7 @@ public class UserService {
 
         Algorithm algorithm = Algorithm.HMAC256(SECRET_KEY);
         String jwt = JWT.create()
+                .withClaim("id", user.getId())
                 .withClaim("name", user.getName() + " " + user.getSurname())
                 .withClaim("type", user.getType().toString())
                 .sign(algorithm);

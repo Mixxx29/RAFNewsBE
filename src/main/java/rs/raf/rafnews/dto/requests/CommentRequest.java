@@ -9,12 +9,9 @@ import java.sql.Date;
 @Getter
 @ToString
 @NoArgsConstructor
-public class NewsRequest {
-    private int id;
-    private String title;
+public class CommentRequest {
     private String content;
     private Date datetime;
-    private int visits;
     private int authorId;
-    private int categoryId;
+    private int newsId;
 }

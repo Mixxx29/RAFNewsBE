@@ -7,4 +7,5 @@ import rs.raf.rafnews.respositories.GenericRepository;
 @Repository
 public interface CategoryRepository extends GenericRepository<Category> {
 
+    Category getByName(String name);
 }

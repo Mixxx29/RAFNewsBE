@@ -9,6 +9,8 @@ import rs.raf.rafnews.annotations.ID;
 import rs.raf.rafnews.entities.enums.UserStatus;
 import rs.raf.rafnews.entities.enums.UserType;
 
+import javax.validation.constraints.NotNull;
+
 @Entity("users")
 @Data
 @Builder

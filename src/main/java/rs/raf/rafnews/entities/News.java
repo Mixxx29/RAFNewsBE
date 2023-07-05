@@ -24,15 +24,13 @@ public class News {
     private String title;
     private String content;
     private Date datetime;
-    private int numberOfVisits;
+    private int visits;
     @ManyToOne
     @Column("author_id")
     private User author;
     @ManyToOne
     @Column("category_id")
     private Category category;
-    /*@OneToMany
-    private List<Comment> comments;*/
     /*@ManyToMany
     private List<Tag> tags;*/
 

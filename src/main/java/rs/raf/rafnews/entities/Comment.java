@@ -10,7 +10,9 @@ import rs.raf.rafnews.annotations.Entity;
 import rs.raf.rafnews.annotations.ID;
 import rs.raf.rafnews.annotations.ManyToOne;
 
-@Entity("comments")
+import java.sql.Date;
+
+@Entity("comment")
 @Data
 @Builder
 @NoArgsConstructor
@@ -19,9 +21,11 @@ public class Comment {
 
     @ID
     private Integer id;
-    private String authorName;
+    @ManyToOne
+    @Column("author_id")
+    private User author;
     private String content;
-    private String datetime;
+    private Date datetime;
     @ManyToOne
     @Column("news_id")
     private News news;

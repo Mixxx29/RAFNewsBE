@@ -7,6 +7,7 @@ import rs.raf.rafnews.annotations.Service;
 import rs.raf.rafnews.entities.Category;
 import rs.raf.rafnews.entities.News;
 import rs.raf.rafnews.entities.User;
+import rs.raf.rafnews.respositories.GenericRepository;
 import rs.raf.rafnews.respositories.category.CategoryRepositoryImpl;
 import rs.raf.rafnews.respositories.news.NewsRepositoryImpl;
 import rs.raf.rafnews.respositories.user.UserRepositoryImpl;
@@ -66,22 +67,12 @@ public class App extends ResourceConfig {
                                 Class.forName(repositoryClass.getName() + "Impl");
                         bind(repositoryImplementationClass).to(repositoryClass).in(Singleton.class);
 
-                        //Class<?> entityType = getEntityType(repositoryImplementationClass);
-                        //EntityManager.setRepository(User.class, entityType.getDeclaredConstructor().newInstance());
+                        // Entity Manager
+                        Class<?> entityType = getEntityType(repositoryImplementationClass);
+                        EntityManager.setRepository(entityType, (GenericRepository<?>) repositoryImplementationClass.newInstance());
                     }
-                } catch (MalformedURLException |
-                         ClassNotFoundException e) {
+                } catch (MalformedURLException | ClassNotFoundException | InstantiationException | IllegalAccessException e) {
                     throw new RuntimeException("Bind repository failed: " + e);
-                }
-
-                // Entity Manager
-                try {
-                    EntityManager.setRepository(User.class, UserRepositoryImpl.class.getDeclaredConstructor().newInstance());
-                    EntityManager.setRepository(Category.class, CategoryRepositoryImpl.class.getDeclaredConstructor().newInstance());
-                    EntityManager.setRepository(News.class, NewsRepositoryImpl.class.getDeclaredConstructor().newInstance());
-                } catch (InvocationTargetException | NoSuchMethodException | InstantiationException |
-                         IllegalAccessException e) {
-                    throw new RuntimeException(e);
                 }
             }
         });

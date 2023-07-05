@@ -236,17 +236,16 @@ public class PostgresGenericRepository<T> implements GenericRepository<T> {
                         field.isAnnotationPresent(Column.class) ?
                                 field.getAnnotation(Column.class).value() : field.getName();
 
-                Object value;
+                Object value = resultSet.getObject(columnName);
+                ;
                 if (field.isAnnotationPresent(ManyToOne.class)) {
                     GenericRepository<?> repository = EntityManager.getRepository(field.getType());
-                    value = repository.getById(getID(entity));
-                    System.out.println(value);
+                    value = repository.getById((int) value);
                 } else if (field.isAnnotationPresent(OneToMany.class)) {
                     continue;
                 } else if (field.isAnnotationPresent(ManyToMany.class)) {
                     continue;
                 } else {
-                    value = resultSet.getObject(columnName);
                     if (field.getType().isEnum()) {
                         Enum<?>[] enumConstants = (Enum<?>[]) field.getType().getEnumConstants();
                         for (Enum<?> enumValue : enumConstants) {

@@ -1,11 +1,11 @@
 package rs.raf.rafnews.dto.responses;
 
 public class NewsResponse {
-    private Integer id;
+    private int id;
     private String title;
     private String content;
     private String datetime;
-    private int numberOfVisits;
-    private Integer authorId;
-    private Integer categoryId;
+    private int visits;
+    private int authorId;
+    private int categoryId;
 }
